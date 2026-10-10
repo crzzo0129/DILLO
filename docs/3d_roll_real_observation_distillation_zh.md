@@ -1,6 +1,8 @@
 # 3D rolling 实机观测蒸馏
 
-站立起滚的新训练入口见 [从站立启动 3D rolling](3d_stand_to_roll_startup_zh.md)。
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
+站立起滚的新训练入口见 从站立启动 3D rolling（历史说明已归档，见 [整理清单](cleanup_manifest_zh.md)）。
 启用时先验证带启动段的教师，再把同样的 `--reset-pose stand` 等参数传给蒸馏；
 学生闭环没有隐藏的启动控制器。
 

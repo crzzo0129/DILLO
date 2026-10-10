@@ -1,5 +1,7 @@
 # 标定 CEM 轨迹上的独立速度 estimator v3
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 依据 [cem_steering_calibration_20260912.md](cem_steering_calibration_20260912.md) 完成新数据采集、
 100 epoch 监督训练及独立测试。新模型位于
 `results/velocity_estimator_cem_calibrated_v3/model/estimator.npz`；未接入或训练 policy。

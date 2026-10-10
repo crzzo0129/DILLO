@@ -1,5 +1,7 @@
 # 持续滚动 25% DR 续训
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 这一级从当前部署的第 81,920 步 PPO 完整 checkpoint 继续，保留 Actor、特权 Critic
 和归一化统计。训练使用 25% deploy DR、真实控制器 720 维观测、滚动快照启动，
 并把 lateral 终止阈值由 0.20 m 放宽为 0.50 m。

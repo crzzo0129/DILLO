@@ -1,5 +1,7 @@
 # Stand-to-roll 训练总结：站立起滚能力是怎样形成的
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 整理日期：2026-09-12。
 
 本文依据本次对话中的云端训练日志、用户验收反馈和项目训练实现整理。重点解释已经成功的站立起滚路线，不将后续优化实验写成当前 Student 的既定来源。文中的训练步数与评估结果来自相应实验；脚本设置用于说明机制，精确复现仍应保留各次运行的配置与报告。
@@ -315,16 +317,16 @@ ros2 launch neural_controller stand_to_roll_student.launch.py confirm_homing:=tr
 - `curl_robot_2d_mjx/config_stand_to_roll.py`：动作接口、初始姿态区间及任务参数。
 - `curl_robot_2d_mjx/environment_stand_to_roll_3d.py`：reset、capture、保险圈和奖励实现。
 - `scripts/collect_cem_startup_data.py`：原始 CEM 零速度启动数据采集。
-- `scripts/train_stand_to_roll_dagger.py`：早期查表教师 DAgger。
+- 早期查表教师 DAgger 已移入本地归档，不属于当前成功主链。
 - `scripts/distill_stand_to_roll_symmetry.py`：最终对称教师蒸馏逻辑。
 - `scripts/export_stand_to_roll_student.py`：Student 到 RTNeural JSON 的导出。
 
 对应阶段文档：
 
-- [零速度启动监督](stand_to_roll_startup_cloud.md)
-- [Capture 优先目标](stand_to_roll_capture_cloud.md)
-- [Reset 高度与早期稳定性调整](stand_to_roll_stability_update.md)
-- [对称教师蒸馏](stand_to_roll_symmetry_distillation_cloud.md)
-- [Student 导出](stand_to_roll_student_json_cloud.md)
+- 零速度启动监督（历史说明已归档，见 [整理清单](cleanup_manifest_zh.md)）
+- Capture 优先目标（历史说明已归档，见 [整理清单](cleanup_manifest_zh.md)）
+- Reset 高度与早期稳定性调整（历史说明已归档，见 [整理清单](cleanup_manifest_zh.md)）
+- 对称教师蒸馏（历史说明已归档，见 [整理清单](cleanup_manifest_zh.md)）
+- Student 导出（历史说明已归档，见 [整理清单](cleanup_manifest_zh.md)）
 
 以上旧文档分别记录当时阶段；其中过时的必经课程要求或原始验收指标，应结合本文描述的后续目标调整理解。

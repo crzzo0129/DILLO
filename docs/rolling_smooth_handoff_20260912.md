@@ -1,5 +1,7 @@
 # stand-to-roll → 持续滚动：平滑接管修改与验证
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 本次只修改接管与命令过渡，不重训网络。新增：相位窗口、双策略实时混合、直行稳定阶段、速度/转向命令限速、实际下发动作历史回写。原 pitch-gated roll-to-stand 模型与站稳判据保留。
 
 ## 先纠正旧仿真结论

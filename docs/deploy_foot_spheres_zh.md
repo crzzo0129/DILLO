@@ -1,5 +1,7 @@
 # 仅足端球体碰撞的走路模型
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 训练入口新增 `--collision-model foot-spheres`，默认仍为 `cad`。
 该模式只启用 4 个 MuJoCo 原生 sphere 与 floor 的碰撞，不使用 mesh
 模拟球体。四个球心与现有 foot site 重合，半径均为 0.0195 m；与奖励

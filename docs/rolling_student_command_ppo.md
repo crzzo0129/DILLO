@@ -1,7 +1,9 @@
 # Fine-tune the command-conditioned rolling student with PPO
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 For the reported collapse after PPO updates, follow
-[the cloud diagnostics and staged recovery procedure](rolling_ppo_recovery.md)
+the cloud diagnostics and staged recovery procedure（历史说明已归档，见 [整理清单](cleanup_manifest_zh.md)）
 before another long run. The long-run command below is the original recipe,
 not a verified remedy. The new fixed evaluator also requires
 `curl_robot_2d_mjx/rolling_ppo_diagnostics.py` when syncing this entry point.

@@ -1,97 +1,36 @@
-# CURL 项目索引
+# DILLO 当前项目索引
 
-本文件是项目的主入口。当前有效开发项目为 `curl_robot_2d`；上级目录中的
-`robot_curl`、`disk_robot`、`pupperv3_mjx` 等是其他阶段或独立项目，不应与本项目混用。
+整理日期：2026-10-10。范围限于本项目；上级目录中的其他机器人项目独立管理。
 
-## 当前方案
+## 主线文档
 
-- 运动学：保留 Pupper 原髋距与腿长，不再强制足端、电机中心构成正五边形。
-- 髋中心距：150.40 mm。
-- 大腿长度：84.45 mm。
-- 小腿投影长度：88.01 mm。
-- 电机碰撞包络：直径 64 mm、厚度 33 mm。
-- 足端：直径 39 mm。
-- 紧凑态足端中心距：43 mm，表面间隙 4 mm。
-- 外壳半径：127.5 mm。
-- 底部开口：60°。
-- 外壳角度归属：躯干 150°、每条大腿 45°、每条小腿 30°。
-- 3D 厚度/左右中心面间距：120 mm。
+| 主线 | 阅读入口 |
+|---|---|
+| 当前代码入口、模型与接口 | [工作流](docs/current_workflows_zh.md) |
+| 行走 | [CEM/正弦基线](docs/walk_cem_zh.md)、[奖励对比](docs/deploy_reward_sweep_zh.md)、[对称步态](docs/deploy_trot_symmetry_zh.md)、[足端球体](docs/deploy_foot_spheres_zh.md)、[地形](docs/deploy_rough_terrain_zh.md)、[髋关节范围](docs/deploy_hip_rom_reward_zh.md) |
+| 持续滚动 | [训练流程](docs/rolling_training_pipeline_20260912.md)、[真实观测蒸馏与 DR](docs/3d_roll_real_observation_distillation_zh.md)、[命令 PPO](docs/rolling_student_command_ppo.md)、[DR 续训](docs/rolling_dr_continuation_20260913.md)、[接管跟踪](docs/rolling_handoff_tracking_20260913.md)、[速度探索 v3](docs/rolling_speed_explore_v3.md) |
+| Stand→Roll | [成功训练链路与 Student](docs/stand_to_roll_training_pipeline_summary_zh.md) |
+| Roll→Stand→Walk | [训练与部署](docs/roll_to_walk_training_pipeline_20260912.md)、[pitch 热切换](docs/roll_to_stand_pitch_hot_switch.md) |
+| 独立速度估计器 | [当前 50 Hz 标定 v3](docs/rolling_velocity_estimator_calibrated_zh.md)、[在线接口](docs/rolling_velocity_estimator_zh.md)、[转向标定](docs/cem_steering_calibration_20260912.md) |
+| 回放与诊断 | [策略可视化](docs/rolling_policy_visualization.md)、[策略序列仿真](docs/rolling_sequence_simulation_20260912.md)、[平滑接管](docs/rolling_smooth_handoff_20260912.md) |
+| 实机部署 | [硬件代码入口](hardware/rolling_command/README.md)、[491520 策略记录](docs/rolling_heading491520_deployment_20260914.md)、[PD 5.5](docs/rolling_pd55_20260914.md)、[自动右转](docs/rolling_auto_right_1s_20260914.md)、[v5.3 修复](docs/rolling_auto_right_fix_20260914.md)、[转向录包](docs/rolling_hardware_steering_check.md) |
+| 数据与归档 | [本地产物管理](docs/local_artifacts_zh.md)、[整理清单](docs/cleanup_manifest_zh.md) |
 
 ## 目录职责
 
-| 目录 | 内容 |
-|---|---|
-| `curl_robot_2d/` | CPU MuJoCo 的 2D/3D 几何、模型和参数源代码 |
-| `curl_robot_2d_mjx/` | MJX 环境、奖励、随机化和 RL curriculum |
-| `scripts/` | 模型生成、CEM、评估、碰撞分析、渲染和训练入口 |
-| `assets/` | 生成或固定使用的 MuJoCo XML 模型 |
-| `tests/` | 单元测试与迁移一致性检查 |
-| `docs/` | 设计、评估协议、训练和历史 handoff 文档 |
-| `experiments/` | 实验登记表 |
-| `results/` | 本地实验结果；大部分被 Git 忽略 |
-| `renders/` | 可再生成的演示渲染 |
+| 目录 | 用途 | GitHub |
+|---|---|---|
+| `curl_robot_2d/` | 当前流程依赖的几何、参数、模型与行走 CEM | 保留 |
+| `curl_robot_2d_mjx/` | 环境、奖励、随机化、蒸馏、切换与估计器 | 保留 |
+| `scripts/` | 当前主线入口及递归依赖的共享工具 | 保留 |
+| `assets/rollingquad_description_2/` | CAD mesh、URDF、MJCF 模型结构 | 保留结构；生成图像和报告忽略 |
+| `assets/controllers/` | 本地 CEM 参数与转向标定 | 忽略 |
+| `tests/` | 当前代码的接口、奖励、导出和数据处理检查 | 保留 |
+| `hardware/rolling_command/` | 接管源码、安装和校验工具 | 保留源码；部署结果 JSON 忽略 |
+| `docs/` | 当前流程与部署版本说明 | 保留 |
+| `experiments/registry.csv` | 手工维护的实验登记信息 | 保留 |
+| `results/`、`renders/`、`deploy_exports/` | 结果、数据、权重与媒体 | 忽略，保留本地 |
+| `.local_archive/20261010/` | 历史代码、文档及整理前版本 | 忽略，保留本地 |
 
-## 当前正式结果
-
-详细文件级入口见 [`results/RESULTS_INDEX.md`](results/RESULTS_INDEX.md)。最重要的结论是：
-
-1. 完整圆壳在严格碰撞惩罚下会使 CEM 退化到几乎不动。
-2. 足端附近裁出 60° 开口后，2D 可达 9.772 圈/10 s，禁碰撞时间 0.188 s。
-3. 90° 开口进一步减少壳体碰撞，但最终速度降至 9.140 圈/10 s。
-4. 第一次 3D 失败来自缺少 0.25 s 启动 ramp 和允许足端接触对，不是力矩不足。
-5. 修复迁移后，旧 90/75 壳体分配在 3D 达到 9.754 圈。
-6. 壳体改为躯干 150°/大腿 45° 后，必须重新优化匹配 reference。
-7. 当前匹配方案在 3D 达到位移等效 8.781 圈、实际滚动 8.568 圈，力矩饱和 0%。
-8. corrected RollingQuad 2 完整 CAD 模型复用该 reference 后，10 s 达到位移等效
-   8.795 圈、实际滚动 8.799 圈；滚动轴倾斜 RMS 1.58°，力矩饱和 0%。
-
-当前正式模型已提升到 `assets/`：
-
-- `assets/curl_robot_2d_pupper_r127p5_open60.xml`
-- `assets/curl_robot_3d_pupper_r127p5_open60_width120.xml`
-- `assets/rollingquad_description_2/mjcf/rollingquad.xml`（当前行走、部署和 3D 滚动默认模型）
-
-二者都是 60° 开口、R=127.5 mm、躯干 150°/大腿 45° 的匹配模型；正式
-`assets` 中不再保留 90° 开口 Pupper 模型。
-
-## 推荐工作流
-
-独立滚动线速度 / 轨迹转向速度估计（不接入 policy）：见
-[`docs/rolling_velocity_estimator_zh.md`](docs/rolling_velocity_estimator_zh.md)，
-包含数据采集、监督训练、留出评估和 NumPy 在线推理。回合内 CEM 变速/转向版本见
-[`docs/rolling_velocity_estimator_switching_zh.md`](docs/rolling_velocity_estimator_switching_zh.md)。
-基于二维转向标定表重训的 v3（50 Hz）及独立持续转向评估见
-[`docs/rolling_velocity_estimator_calibrated_zh.md`](docs/rolling_velocity_estimator_calibrated_zh.md)。
-此前使用未认可 policy 生成的模型和评估结果已作废。
-
-```powershell
-# 当前 RollingQuad 2 行走训练主入口
-python -m scripts.train_ppo_walk3d probe
-python -m scripts.train_ppo_walk3d
-python -m scripts.train_ppo_deploy probe
-python -m scripts.train_ppo_deploy
-
-# 生成模型
-python -m scripts.generate_model
-python -m scripts.generate_3d_model
-
-# 测试
-python -m unittest discover -s tests -v
-
-# 2D CEM 与 3D reference 验证
-python -m scripts.optimize_phase_controller --help
-python -m scripts.evaluate_3d_symmetric_cem_reference --duration 10 --physics-profile reference --out results/rollingquad_2_3d_reference/cpu_newton20_reference_10s.json
-
-# 进入 RL 前先做 reference-only 鲁棒性验证
-python -m scripts.compare_mjx_3d_reference --help
-```
-
-旧 `train_mjx_3d_walking_ppo.py` 行走流程仅用于历史实验复现；后续行走与实机部署 policy 使用上述两个 `train_ppo_*` 入口。
-
-## 文件管理规则
-
-- 源代码、固定参数、关键 controller 和实验摘要应保留。
-- `results/` 中的逐代 CSV、重复 GIF 和 sweep 中间帧默认不提交 Git。
-- 删除实验前先检查 `results/RESULTS_INDEX.md`，避免删除当前 reference 的来源。
-- 新实验应在 `experiments/registry.csv` 登记假设、模型、reference 和结果目录。
-- `__pycache__`、PPT 展开目录和临时渲染均为可再生成文件，可以安全清理。
+共享模块中的旧几何或旧 recipe 选项不代表推荐训练入口；保留原因见整理清单。
+所有示例中的结果路径均是本地产物路径。

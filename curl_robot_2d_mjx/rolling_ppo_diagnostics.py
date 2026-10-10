@@ -6,6 +6,36 @@ import json
 import numpy as np
 
 
+def summarize_average_yaw(totals, mask, *, episode_length):
+    """Average within each fixed-command episode before comparing episodes."""
+    steps = np.asarray(totals["steps"])
+    valid = (np.asarray(mask, dtype=bool) & (steps > 0)
+             & (np.asarray(totals["command_changed"]) < .5))
+    error = np.asarray(totals["yaw_signed"]) / np.maximum(steps, 1)
+    result = {
+        "episodes": int(np.sum(valid)),
+        "episode_mean_yaw_mae_rad_s": float(np.mean(np.abs(error[valid]))) if np.any(valid) else None,
+        "episode_mean_yaw_bias_rad_s": float(np.mean(error[valid])) if np.any(valid) else None,
+        "definition": "Time-average actual minus applied yaw command within each episode, then equal episode weighting; fixed targets only. Direction is net rotation sign, not instantaneous tracking.",
+    }
+    if "yaw_command_sum" not in totals:
+        return result
+    command = np.asarray(totals["yaw_command_sum"]) / np.maximum(steps, 1)
+    actual = np.asarray(totals["yaw_rate_sum"]) / np.maximum(steps, 1)
+    turning = valid & (np.abs(command) > 1e-3)
+    correct = turning & (actual * command > 0)
+    full_healthy = (steps == episode_length) & (np.asarray(totals["failed"]) < .5)
+    result.update({
+        "mean_actual_yaw_rad_s": float(np.mean(actual[valid])) if np.any(valid) else None,
+        "mean_applied_yaw_command_rad_s": float(np.mean(command[valid])) if np.any(valid) else None,
+        "turning_episodes": int(np.sum(turning)),
+        "correct_direction_count": int(np.sum(correct)),
+        "correct_direction_rate": float(np.mean(correct[turning])) if np.any(turning) else None,
+        "full_horizon_healthy_correct_direction_rate": float(np.mean((correct & full_healthy)[turning])) if np.any(turning) else None,
+    })
+    return result
+
+
 def summarize_command_groups(totals, forward_commands, yaw_commands, *,
                              speed_min, speed_max, episode_length, minimum_turns):
     """Describe tracking and survival separately, without extra simulator work."""
@@ -47,6 +77,7 @@ def summarize_command_groups(totals, forward_commands, yaw_commands, *,
                 if "steady_steps" in totals and np.sum(totals["steady_steps"][mask]) else None),
             "yaw_mae_rad_s": float(np.sum(totals["yaw_abs"][mask]) / samples),
             "yaw_bias_rad_s": float(np.sum(totals["yaw_signed"][mask]) / samples),
+            "average_yaw_tracking": summarize_average_yaw(totals, mask, episode_length=episode_length),
             "full_horizon_failure_free_episodes": int(np.sum(survivors)),
             "full_horizon_failure_free_forward_mae_m_s": (
                 float(np.sum(totals["vx_abs"][survivors]) / survivor_samples)
@@ -117,6 +148,7 @@ def make_fixed_evaluator(env, networks, anchor_policy, *, count, seed,
         totals = {
             "steps": z, "return": z, "turns": z,
             "vx_abs": z, "vx_signed": z, "yaw_abs": z, "yaw_signed": z,
+            "yaw_rate_sum": z, "yaw_command_sum": z,
             "final_target_vx_abs": z,
             "transition_steps": z, "transition_vx_abs": z, "transition_yaw_abs": z,
             "steady_steps": z, "steady_vx_abs": z, "steady_yaw_abs": z,
@@ -151,6 +183,8 @@ def make_fixed_evaluator(env, networks, anchor_policy, *, count, seed,
                 "final_target_vx_abs": jp.abs(candidate.metrics["forward_velocity_m_s"]
                     - candidate.metrics.get("target_forward_velocity_command", candidate.info["forward_velocity_command"])),
                 "yaw_abs": candidate.metrics["yaw_rate_error_abs_rad_s"],
+                "yaw_rate_sum": candidate.metrics["rolling_axis_heading_rate_rad_s"],
+                "yaw_command_sum": candidate.metrics["yaw_rate_command_rad_s"],
                 "transition_steps": transition,
                 "transition_vx_abs": transition * candidate.metrics["forward_velocity_error_abs_m_s"],
                 "transition_yaw_abs": transition * candidate.metrics["yaw_rate_error_abs_rad_s"],
@@ -259,6 +293,8 @@ def make_fixed_evaluator(env, networks, anchor_policy, *, count, seed,
                                    ("mature", np.asarray(manifest["handoff_snapshot"])<=.5))},
             "yaw_mae_rad_s": float(np.sum(totals["yaw_abs"]) / samples),
             "yaw_bias_rad_s": float(np.sum(totals["yaw_signed"]) / samples),
+            "average_yaw_tracking": summarize_average_yaw(
+                totals, np.ones(count, dtype=bool), episode_length=episode_length),
             "same_state_student_action_rmse": float(np.sqrt(np.sum(totals["action_error_sq"]) / samples)),
             "mean_pre_tanh_policy_std": float(np.sum(totals["std_sum"]) / samples),
             "action_saturation_fraction": float(np.sum(totals["saturation"]) / samples),

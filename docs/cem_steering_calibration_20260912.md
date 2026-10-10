@@ -1,5 +1,7 @@
 # 当前高速 CEM 的转向标定（2026-09-12）
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 已完成本地 CPU MuJoCo 标定。控制器保持为
 `results/rollingquad_abd10_high_speed_zero_contact_refine_smoke/01_zero_contact_speed_refine/best_phase_controller.json`，没有修改 CEM 系数或任何学生权重。
 
@@ -56,11 +58,11 @@
 
 ## 云端使用
 
-代码和数据包：`results/cem_steering_calibration_v1.zip`。通过 Git 同步后，在项目根目录解包：
+代码和数据包：`results/cem_steering_calibration_v1.zip`。源码通过 Git 同步，数据包独立传输；旧解包步骤取消：
 
 ```bash
 git pull
-unzip -o results/cem_steering_calibration_v1.zip
+# 源码通过 Git 同步；运行产物单独传输，无需旧 ZIP 解压步骤。
 ```
 
 在现有 `scripts.train_mjx_3d_roll_distillation` 或 `scripts.train_mjx_3d_roll_student_dr_ppo` 命令中，保留 `--command-conditioned`、上述 geometry 和速度范围，增加：

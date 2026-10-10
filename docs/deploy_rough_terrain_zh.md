@@ -1,5 +1,7 @@
 # Deploy：从平地策略继续训练轻度崎岖地形
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 通过地形的任务难度促使策略改善落脚和支撑，保留 hip 摆幅奖励。
 当前版本另有持续的指数姿态惩罚：站立严格、行走较弱，偏离默认关节
 位置较远时罚分明显增大，详见 `deploy_hip_rom_reward_zh.md`。

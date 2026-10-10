@@ -1,5 +1,7 @@
 # 四卡独立奖励对比
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 新增 `--sweep symmetry` 可运行“基线 / 左右镜像 / 周期步态 / 两者都有”的
 四组对照，详见 [对称步态实验](deploy_trot_symmetry_zh.md)。本页原有组合仍是
 默认 `--sweep reward`，旧实验续训保持原设置。

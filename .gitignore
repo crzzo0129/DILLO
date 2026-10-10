@@ -1,3 +1,4 @@
+# Python caches and local environments.
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -5,103 +6,94 @@ __pycache__/
 .ruff_cache/
 .handoff-probe-deps/
 .tmp_test/
-renders/
-*.log
+.venv/
+venv/
 
-# Local report/build scratch.
-ppt_design_exploration_build/
-results/**/pptx_check/
-results/**/pptx_check.zip
-results/**/CURL_robot_design_exploration_CN/
-results/**/*.inspect.ndjson
+# User-approved local archive.
+/.local_archive/
 
-# Generated experiment outputs.
-#
-# Keep results ignored by default: PPO checkpoints, rollout GIFs/NPZ/CSVs,
-# CEM sweeps, torso-COM exploration, walking exploration, diagnostics, and
-# smoke-test scratch directories should stay local unless explicitly force-added.
-results/**
-
-# Keep only controller references required by current training/smoke defaults.
-!results/
-!results/RESULTS_INDEX.md
-# Cloud recovery bundle is transferred through Git.
-!results/rolling_ppo_recovery_cloud_v2.zip
-!results/rolling_ppo_candidate_eval_v3.zip
-!results/rolling_ppo_tracking_v4.zip
-!results/collision_constrained_cem/
-!results/collision_constrained_cem/best_phase_controller.json
-!results/collision_constrained_cem_foot_gap_2mm_short_contact/
-!results/collision_constrained_cem_foot_gap_2mm_short_contact/best_phase_controller.json
-!results/staged_cem_real_geometry_180_d50_foot60/
-!results/staged_cem_real_geometry_180_d50_foot60/03_foot_gap_2mm/
-!results/staged_cem_real_geometry_180_d50_foot60/03_foot_gap_2mm/best_phase_controller.json
-!results/pupper_r127p5_open60_shell150_45_three_stage_cem/
-!results/pupper_r127p5_open60_shell150_45_three_stage_cem/03_strict_forbidden_collision/
-!results/pupper_r127p5_open60_shell150_45_three_stage_cem/03_strict_forbidden_collision/best_phase_controller.json
-!results/simple_convex_warmstart_cem/
-!results/simple_convex_warmstart_cem/03_strict_10s/
-!results/simple_convex_warmstart_cem/03_strict_10s/best_phase_controller.json
-!results/rollingquad_primitive_warmstart_cem/
-!results/rollingquad_primitive_warmstart_cem/03_strict_10s/
-!results/rollingquad_primitive_warmstart_cem/03_strict_10s/best_phase_controller.json
-!results/rollingquad_primitive_stiff_cem/
-!results/rollingquad_primitive_stiff_cem/03_strict_10s/
-!results/rollingquad_primitive_stiff_cem/03_strict_10s/best_phase_controller.json
-
-# High-speed zero-contact reference chain for command-conditioned training
-# (train_mjx_3d_residual_ppo --recipe command_tracking_v1).
-!results/rollingquad_abd10_high_speed_zero_contact_refine_smoke/
-!results/rollingquad_abd10_high_speed_zero_contact_refine_smoke/01_zero_contact_speed_refine/
-!results/rollingquad_abd10_high_speed_zero_contact_refine_smoke/01_zero_contact_speed_refine/best_phase_controller.json
-!results/rollingquad_abd10_high_speed_cem_smoke/
-!results/rollingquad_abd10_high_speed_cem_smoke/03_speed_strict_10s/
-!results/rollingquad_abd10_high_speed_cem_smoke/03_speed_strict_10s/best_phase_controller.json
-!results/rollingquad_abd10_speed_discovery_zero_contact/
-!results/rollingquad_abd10_speed_discovery_zero_contact/01_speed_discovery_zero_contact/
-!results/rollingquad_abd10_speed_discovery_zero_contact/01_speed_discovery_zero_contact/best_phase_controller.json
-
-# Version the CEM cycle dataset required by stand-to-roll BC and PPO training.
-!results/cem_cycle_data/
-!results/cem_cycle_data/cem_cycles.npz
-!results/cem_cycle_data/cem_cycles.json
-
-# Version the validated rolling-reset dataset required by stopping PPO.
-# Other rolling-stop searches, reports, and generated terminal states remain local.
-!results/rolling_stop/
-!results/rolling_stop/low_speed_snapshots_0p40hz.npz
-!results/rolling_stop/low_speed_snapshots_0p40hz.json
-
-# Version the walking-start snapshot bank required by the walk->compact
-# stage-one training (scripts.collect_walking_start_snapshots).
-!results/walk_start_snapshots_0p4/
-!results/walk_start_snapshots_0p4/walk_start_snapshots.npz
-!results/walk_start_snapshots_0p4/walk_start_snapshots_meta.json
-
-# Version the +90° Roll-to-Stand handoff banks required by residual/absolute
-# dynamic roll-to-stand training (scripts.collect_reference_roll_to_stand).
-!results/roll_to_stand_reference_residual/
-!results/roll_to_stand_reference_residual/handoffs_*.npz
-!results/roll_to_stand_reference_residual/handoffs_*.summary.json
-
-# Local training services and logs.
+# Experiment outputs, datasets, weights and release packages stay local.
+# No exceptions for references, snapshot banks or cloud transfer bundles.
+/results/
+/renders/
+/deploy_exports/
+/handoff_assets/
+/output/
+/outputs/
+/walk_v2_release_20260910_share/
+/assets/controllers/
+/assets/*reference*.json
+/assets/*teacher*.json
+/assets/**/*.report.json
+/hardware/rolling_command/*.json
 wandb/
 ppo_logs/
 ppo_logs_cloud/
 ppo_models/
 ppo_models_cloud/
 mjx_runs/
+checkpoints/
+*_checkpoints/
+datasets/
+weights/
 *.tfevents.*
+*.log
+MUJOCO_LOG.TXT
+MJMODEL.TXT
 
-# Cloud transfer bundle for the calibrated high-speed CEM steering map.
-!results/cem_steering_calibration_v1.zip
-!results/rolling_distill_review_v1.zip
-!results/rolling_low_speed_recovery_v1.zip
-!results/rolling_low_speed_recovery_v2.zip
-!results/rolling_policy_visualization_v1.zip
-!results/rolling_hardware_tools_v1.zip
-!results/rolling_hardware_actor_81920.zip
-!results/rolling_handoff_tracking_v1.zip
-!results/rolling_speed_fast_v1.zip
-!results/rolling_speed_fast_v2.zip
-!results/rolling_speed_explore_v3.zip
+# Policy and checkpoint files, including root-level exports.
+*.npz
+*.npy
+*.bin
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+*.msgpack
+*.tflite
+params_best
+params_final
+student_params
+bc_params
+ppo_checkpoint/
+*rtneural*.json
+*policy*.json
+rollingquad_2_deploy*.json
+estimator.json
+
+# Data tables and media; retain the hand-maintained experiment registry.
+*.csv
+!experiments/registry.csv
+*.tsv
+*.h5
+*.hdf5
+*.parquet
+*.bag
+*.mcap
+*.db3
+*.mp4
+*.mov
+*.avi
+*.webm
+*.gif
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.tif
+*.tiff
+*.pdf
+*.svg
+*.pptx
+*.inspect.ndjson
+
+# Transfer packages and report build scratch.
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+ppt_design_exploration_build/

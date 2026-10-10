@@ -1,5 +1,7 @@
 # Deploy 步态对称性与 hip 摆幅调整
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 入口：`scripts/train_ppo_deploy.py`。同步到训练机器时，也要同步
 `scripts/deploy_gait.py` 和新增的 `scripts/deploy_symmetry.py`。
 

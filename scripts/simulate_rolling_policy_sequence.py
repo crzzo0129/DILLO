@@ -121,7 +121,22 @@ def run(args, snapshot_callback=None):
     stable_duration = longest_stable = 0.
     peak_torque = 0.
     min_candidate_delta = None
-    handoff = RollingHandoff()
+    transition_config = policies['rolling'].doc.get('handoff_command_transition', {})
+    initial_speed = transition_config.get('runtime_initial_speed_estimate_m_s')
+    if initial_speed is not None:
+        if (not math.isfinite(initial_speed) or not .45 <= initial_speed <= 1.05 or
+                transition_config.get('speed_slew_m_s2') != .15 or
+                transition_config.get('yaw_slew_rad_s2') != .07):
+            raise ValueError('Unsupported handoff command transition')
+    handoff = RollingHandoff(initial_speed=initial_speed)
+    request_delay = getattr(args, 'request_after_startup_s', None)
+    direct_takeover_time = getattr(args, 'direct_takeover_time_s', None)
+    if direct_takeover_time is not None:
+        if (args.handoff_mode != 'prescribed' or not math.isfinite(direct_takeover_time)
+                or direct_takeover_time < .5 or request_delay is not None):
+            raise ValueError('Timed direct takeover requires prescribed mode, time >= 0.5 s and no request delay')
+    yaw_start_delay = getattr(args, 'yaw_start_delay', 0.)
+    yaw_release_after = getattr(args, 'yaw_release_after', None)
     startup_history = None
     window_ticks = 0
     max_applied_delta = 0.
@@ -168,10 +183,17 @@ def run(args, snapshot_callback=None):
                 rolled += wrap(pitch - previous_pitch)
                 previous_pitch = pitch
                 policy_ticks += 1
-                if request_time is None and abs(rolled) >= 2 * math.pi:
+                request_due = (abs(rolled) >= 2 * math.pi if request_delay is None
+                               else data.time >= .5 + request_delay - 1e-9)
+                if direct_takeover_time is not None:
+                    request_due = data.time >= direct_takeover_time - 1e-9
+                if request_time is None and request_due:
                     request_time = float(data.time)
-                    event('rolling_requested_after_one_turn', turns=rolled / (2 * math.pi))
-                if request_time is not None and policy_ticks >= 50 and abs(gyro[1]) >= .5:
+                    event('rolling_requested_at_direct_time' if direct_takeover_time is not None else
+                          'rolling_requested_after_one_turn' if request_delay is None
+                          else 'rolling_requested_at_recorded_delay', turns=rolled / (2 * math.pi))
+                if (request_time is not None and (direct_takeover_time is not None or
+                        (policy_ticks >= 50 and abs(rolled) >= 2 * math.pi and abs(gyro[1]) >= .5))):
                     candidate_command = [.6, 0., 0.] if args.handoff_mode == 'smooth' else command
                     candidate = remap(history, policies['startup'], policies['rolling'], last_target, candidate_command)
                     if candidate is not None:
@@ -198,7 +220,12 @@ def run(args, snapshot_callback=None):
             smooth = continuous and args.handoff_mode == 'smooth'
             if smooth:
                 old_stage = handoff.stage
-                handoff.tick(RollingHandoff.healthy(R[2, 1], gyro[1]), args.vx, 0. if stop_request is not None else args.yaw)
+                since_takeover = float(data.time) - takeover
+                requested_yaw = (args.yaw if since_takeover >= yaw_start_delay - 1e-9 and
+                                 (yaw_release_after is None or since_takeover < yaw_release_after - 1e-9)
+                                 else 0.)
+                handoff.tick(RollingHandoff.healthy(R[2, 1], gyro[1]), args.vx,
+                             0. if stop_request is not None else requested_yaw)
                 phase = handoff.stage
                 if handoff.stage != old_stage:
                     event('handoff_stage', stage=handoff.stage)
@@ -208,6 +235,10 @@ def run(args, snapshot_callback=None):
                 applied_command = np.array([handoff.vx, 0., handoff.yaw])
             else:
                 applied_command = command.copy() if continuous else np.zeros(3)
+                heading_hold_gain = getattr(args, 'heading_hold_gain', 0.)
+                if continuous and heading_hold_gain:
+                    heading_error = math.atan2(-R[0, 1], R[1, 1])
+                    applied_command[2] = np.clip(-heading_hold_gain * heading_error, -.07, .07)
             if snapshot_callback is not None and smooth:
                 snapshot = snapshot_callback(data=data, phase=phase, history=history,
                     previous_target=last_target, policy=policies['rolling'], rows=rows,
@@ -281,6 +312,11 @@ def run(args, snapshot_callback=None):
         physics='CPU MuJoCo cg20, 1ms physics, 20ms policy, no self collision, 3Nm model torque limits',
         turn_duration_after_ppo_takeover_s=args.turn_seconds, stop_observation_s=args.stop_seconds,
         handoff_mode=args.handoff_mode,
+        handoff_initial_speed_command_m_s=initial_speed,
+        request_after_startup_s=request_delay,
+        direct_takeover_time_s=direct_takeover_time,
+        yaw_start_delay_after_takeover_s=yaw_start_delay,
+        yaw_release_after_takeover_s=yaw_release_after,
         observation_gyro_frame='torso: world angular velocity rotated by torso R.T',
         max_applied_rolling_target_delta_rad=max_applied_delta if args.handoff_mode == 'smooth' else None,
         rolling_limiter_ticks=limiter_ticks if args.handoff_mode == 'smooth' else None,
@@ -342,11 +378,25 @@ def main():
     p.add_argument('--yaw', type=float, default=.07)
     p.add_argument('--turn-seconds', type=float, default=7.)
     p.add_argument('--stop-seconds', type=float, default=5.)
+    p.add_argument('--request-after-startup-s', type=float,
+                   help='Request after this delay, while retaining the one-turn/phase gates')
+    p.add_argument('--yaw-start-delay', type=float, default=0.,
+                   help='Delay the turn command relative to start of PPO blending')
+    p.add_argument('--yaw-release-after', type=float,
+                   help='Release yaw to zero at this time after PPO blending starts')
     p.add_argument('--video', action='store_true')
     p.add_argument('--handoff-mode', choices=('smooth', 'controller', 'prescribed'), default='smooth',
                    help='smooth: new staged handoff; controller: legacy direct gate; prescribed: simulation-only direct bypass')
     args = p.parse_args()
     if args.out.exists():p.error('Use a new output directory')
+    if not math.isfinite(args.yaw_start_delay) or args.yaw_start_delay < 0:
+        p.error('yaw-start-delay must be finite and nonnegative')
+    if args.yaw_release_after is not None and (not math.isfinite(args.yaw_release_after)
+                                              or args.yaw_release_after <= args.yaw_start_delay):
+        p.error('yaw-release-after must exceed yaw-start-delay')
+    if args.request_after_startup_s is not None and (not math.isfinite(args.request_after_startup_s)
+                                                   or args.request_after_startup_s < 0):
+        p.error('request-after-startup-s must be finite and nonnegative')
     run(args)
 
 

@@ -1,5 +1,7 @@
 # 滚动策略 → roll-to-stand：话题预约、pitch 门控热切换
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 当前实现适用于 `controller_backend: rtneural`，两个网络均为 36×20 输入、12 个位置动作。原有 CEM 自动展开功能独立，不能同时启用。
 
 ## 1. 云端导出

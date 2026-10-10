@@ -1,5 +1,7 @@
 # DR 策略：从 stand-to-roll 接管状态续训速度跟踪
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 本次继续使用 DR 检查点 **696320**，不重新蒸馏。目标是让策略接住启动后的较高速度，并逐步跟踪用户指定的滚动速度。最终命令保留 **0.45–0.75 m/s**，无需因为启动瞬间超速就把整个目标区间上移。
 
 代码已准备；本地只做源码语法与差异检查，没有运行本轮采集、仿真、单元测试或训练。效果以云端同一评估面板的 step=0 和后续检查点比较为准。本次没有修改或部署机器人控制器。
@@ -28,12 +30,12 @@
 
 ## 云端命令
 
-在云端 `curl_robot_2d` 仓库根目录操作。传输包为 `results/rolling_handoff_tracking_v1.zip`，包含当前源码、检查文件，以及已经核对来源的三个 JSON 模型。它不包含 PPO 检查点；继续使用云端已有的 696320 检查点。
+在云端 `curl_robot_2d` 仓库根目录操作。源码通过 Git 同步；三个 JSON 模型和对应 PPO 检查点单独传输到原相对路径。`results/rolling_handoff_tracking_v1.zip` 是既有本地传输包，不再通过 GitHub 同步。下方配方使用已有的 696320 检查点，替换来源时需显式指定匹配参数。
 
-先解压覆盖同名源码，运行轻量检查，再采集接管快照。采集只使用云端 CPU，不运行 JAX，也不需要显示器：
+同步源码并单独准备权重后，运行轻量检查，再采集接管快照。采集只使用云端 CPU，不运行 JAX，也不需要显示器：
 
 ```bash
-unzip -o results/rolling_handoff_tracking_v1.zip -d .
+# 源码通过 Git 同步；运行产物单独传输，无需旧 ZIP 解压步骤。
 
 python -m unittest discover -s tests -p test_rolling_handoff_tracking.py -v
 

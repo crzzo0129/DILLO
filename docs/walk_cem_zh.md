@@ -1,5 +1,7 @@
 # 从 stand 起步的 CEM / 正弦行走控制器
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 默认机器人是 `assets/rollingquad_description_2/mjcf/rollingquad.xml`，使用模型原有碰撞、质量、伺服增益和 1 ms 物理步长，不依赖 JAX 或 PPO checkpoint。
 
 在 `curl_robot_2d` 项目目录执行：

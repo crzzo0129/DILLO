@@ -1,5 +1,7 @@
 # 允许暂时退化的速度探索
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 v3 将“训练什么时候停止”和“哪个检查点值得保留”分开。先前单次下降 3 个百分点即退出的规则，不再用于速度探索训练。
 
 默认规则：
@@ -16,7 +18,7 @@ v3 将“训练什么时候停止”和“哪个检查点值得保留”分开�
 在 `curl_robot_2d` 根目录解压 v3 包：
 
 ```bash
-unzip -o results/rolling_speed_explore_v3.zip -d .
+# 源码通过 Git 同步；运行产物单独传输，无需旧 ZIP 解压步骤。
 
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -u -m scripts.run_rolling_speed_fast \
   --handoff-bank results/rolling_handoff_bank_20260913_090129.npz
@@ -34,6 +36,6 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python -u -m scripts.run_rolling_speed_fast \
 
 也可自行设置 `--exploration-stop-drop`、`--exploration-stop-patience`、`--exploration-warmup-steps`。使用 `--source` 指定已停止的 run、`--step` 指定其实际保存的检查点，可从该处继续；PPO 优化器状态会重建，探索计时和评估基线从这次续训开始重新计算。新输出仍需新目录，避免覆盖之前的结果。
 
-完成后发回自动生成的同名 ZIP。最优仍为 step=0 只表示没有找到符合严格筛选条件的更好候选，不会阻止其余训练步继续探索。
+完成后通过独立文件传输发回自动生成的同名 ZIP。最优仍为 step=0 只表示没有找到符合严格筛选条件的更好候选，不会阻止其余训练步继续探索。
 
 本地仅进行了 AST 和源码差异检查，没有运行单元测试、训练或仿真。

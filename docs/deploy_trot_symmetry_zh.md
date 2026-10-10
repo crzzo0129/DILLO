@@ -1,5 +1,7 @@
 # 左右镜像与实际周期步态约束
 
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
 训练入口 scripts/train_ppo_deploy.py 新增三项可选设置；均默认 0，保持旧实验
 和旧续训的目标不变。推荐通过四卡 symmetry 实验比较，不能仅凭总 reward 排名。
 

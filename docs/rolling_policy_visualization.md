@@ -1,9 +1,11 @@
 在云端导出当前选中滚动策略的 MP4，下载后观看。入口读取 `recovery.json` 中的 `selected_student`，目前是原校准蒸馏策略 `rolling_distill_calibrated_20260912_034719/student_params`，不是被筛选器拒绝的低速补训候选。
 
-先通过 Git 同步源码。若只同步增量包，在云端项目根目录解压（要求已安装上次成功复评使用的 v2 代码）：
+> 2026-10-10 整理：本页保留该流程的实现说明和既有验证记录。当前入口见 [工作流](current_workflows_zh.md)；权重、数据、reference 和 ZIP 均需 [单独传输](local_artifacts_zh.md)，不再通过 Git 同步。
+
+先通过 Git 同步源码；权重与数据独立传输到原相对路径，不再使用 Git 增量 ZIP：
 
 ```bash
-python -m zipfile -e results/rolling_policy_visualization_v1.zip .
+# 源码通过 Git 同步；运行产物单独传输。
 python -m pip install imageio imageio-ffmpeg
 
 export CUDA_VISIBLE_DEVICES=0,1,2,3
@@ -21,15 +23,15 @@ python -u -m scripts.visualize_rolling_student \
 
 输出保留 `evaluation/rollouts/episode_*.npz` 供后续回放，每份包含 qpos、qvel、逐步指标、学生来源及初态校验值。`visualization.json` 保存选取依据、各场景对应的评价编号、指标和视频文件名。初态缓存不加入视频 ZIP；不会修改任何权重，也不执行 BC、DAgger 或 PPO 更新。
 
-通过 Git 下载可使用自定义输出路径，便于定位和暂存：
+独立传输结果时可使用自定义输出路径：
 
 ```bash
 python -u -m scripts.visualize_rolling_student \
   --run results/rolling_low_speed_20260912_065438 \
   --out results/rolling_selected_policy_video
-git add -f results/rolling_selected_policy_video.zip
+# 结果包单独传输，不加入 Git。
 ```
 
-然后按现有 Git 工作流提交和推送。输出已存在时请换新 `--out`，脚本不会覆盖历史视频。若需要查看补训候选，可显式追加 `--student results/rolling_low_speed_20260912_065438/dagger_01/student_params`，并使用另一个输出目录；默认始终读取当前选中策略。
+结果包通过独立文件传输获取，不提交或推送到 GitHub。输出已存在时请换新 `--out`，脚本不会覆盖历史视频。若需要查看补训候选，可显式追加 `--student results/rolling_low_speed_20260912_065438/dagger_01/student_params`，并使用另一个输出目录；默认始终读取当前选中策略。
 
 渲染使用 EGL 和 H.264。入口预先检查视频编码依赖，避免跑完评价才发现缺少编码器。执行失败时也会打包已生成的日志和轨迹，便于诊断。本地仅进行语法和参数静态核对，没有启动训练、仿真或视频渲染；实际画面需要云端生成后检查。

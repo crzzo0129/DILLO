@@ -1,196 +1,46 @@
-# Curl Robot 2D
+# DILLO
 
-RollingQuad 2 从 stand 起步的 CEM / 正弦行走：`python -m scripts.walk_cem --view`。
-默认加载已保存的 CEM 参数；使用 `--controller sine` 切换到正弦基线。
-搜索、评估和 API 说明见 [walk_cem_zh.md](docs/walk_cem_zh.md)。
+DILLO 研究 RollingQuad 2 的三维行走、持续滚动、Stand→Roll 和 Roll→Stand。
+独立滚动速度估计器保留完整的采集、训练、评估与 NumPy 在线推理链路。
+项目沿用 `curl_robot_2d` 名称；二维几何和旧名称模块中仍被当前流程调用的共享实现保留。
 
-> 项目导航：先阅读 [`PROJECT_INDEX.md`](PROJECT_INDEX.md)。当前 Pupper 几何、正式
-> reference、3D paired evaluation 与结果清理规则统一记录在那里；结果文件入口见
-> [`results/RESULTS_INDEX.md`](results/RESULTS_INDEX.md)。本 README 保留项目的完整历史说明。
+从 [项目索引](PROJECT_INDEX.md) 选择工作流；
+[当前入口与模型](docs/current_workflows_zh.md) 说明各条主线使用的代码及接口。
 
-用于探索四足机器人全身蜷缩滚动的二维侧视仿真子项目。最终目标是实现
-**行走—滚动双模态机器人及其双向切换**；二维模型是从滚动动力学和纵向
-切换机制出发、逐步迁移到完整三维四足机器人的第一阶段。
+## 运行环境
 
-本方向不同于已有的 `disk_robot`，也不同于原先给 Torso 增加自由度的
-`robot_curl`：
+在本目录运行命令。CPU MuJoCo 工具使用 `requirements.txt`；
+MJX/PPO 训练在 Linux GPU 环境使用 `requirements-mjx.txt`；
+独立估计器采集与训练使用 `requirements-estimator.txt`。
+估计器的在线推理只需要 NumPy。
 
-- 不把 Torso 改成圆盘；
-- 暂不增加或改变现有机器人关节自由度；
-- Torso 保持为单个刚体；
-- 机器人利用现有腿部关节蜷缩；
-- 在侧视图中，由 Torso、前腿大腿/小腿、后腿大腿/小腿共 5 个刚性部分
-  形成近似五边形；
-- 当前几何基线令五条中心线边全部等长，公共边长为 0.15 m；
-- `compact` 关键帧保持五边等长，并让两个有限半径足端球表面接触、中心不再
-  重合，因此它不再是严格正五边形；
-- 在这 5 个部分外侧增加分段弧形外壳，使蜷缩姿态的外围轮廓近似圆形。
-
-## 当前研究范围
-
-当前子项目只研究滚动及蜷缩/展开过程的侧视二维问题。二维模型中的前腿和
-后腿分别代表真实机器人左右对称的一对腿；后续设置质量与转动惯量时，需要
-计入投影中重合的两侧结构。
-
-真实行走模态仍由完整三维四足机器人承担，不在第一阶段二维仿真的直接评价
-范围内。二维模型首先回答以下问题：
-
-1. 现有关节是否能够形成适合滚动的蜷缩构型？
-2. 弧形外壳应该采用怎样的曲率、弧长、厚度与间隙？
-3. 质量和质心位置如何影响滚动启动、平顺性和能耗？
-4. 机器人应该采用被动滚动、主动滚动，还是二者结合？
-5. 强化学习能否发现有效且可迁移的滚动步态？
-6. 如何制动并停在允许展开和恢复站立的滚动相位？
-7. 二维蜷缩、滚动和展开机制如何迁移到三维双模态系统？
-
-## 文档
-
-- [`docs/project_roadmap_zh.md`](docs/project_roadmap_zh.md)：从当前二维滚动
-  到三维双模态和实体验证的执行路线图、里程碑与退出条件。
-- [`docs/evaluation_protocol_zh.md`](docs/evaluation_protocol_zh.md)：跨
-  CEM、RL、二维和未来三维任务的统一物理指标与分级验收协议。
-- [`docs/experiment_management_zh.md`](docs/experiment_management_zh.md)：
-  实验 ID、假设、产物和决策记录规范；机器可读索引位于
-  [`experiments/registry.csv`](experiments/registry.csv)。
-- [`docs/design_discussion_zh.md`](docs/design_discussion_zh.md)：截至
-  2026-07-26 的方案讨论整理、当前共识和待研究问题。
-- [`docs/fixed_parameters_zh.md`](docs/fixed_parameters_zh.md)：第一版二维
-  等效模型的固定参数、来源、合并规则和暂定仿真参数。
-- [`docs/rigid_phase_analysis_zh.md`](docs/rigid_phase_analysis_zh.md)：
-  compact 构型的刚性滚动相位、质心、势能和重力矩分析。
-- [`docs/rigid_release_baseline_zh.md`](docs/rigid_release_baseline_zh.md)：
-  刚性 compact 从静止释放后的完整动态基准和接触损失结果。
-- [`docs/servo_release_baseline_zh.md`](docs/servo_release_baseline_zh.md)：
-  有限刚度和力矩下的可变形释放基准，以及与刚性结果的对照。
-- [`docs/active_roll_controller_baseline_zh.md`](docs/active_roll_controller_baseline_zh.md)：
-  从纯相位控制的停滞，到相位锁定周期控制实现持续主动滚动的完整基准。
-- [`docs/leg_crossing_analysis_zh.md`](docs/leg_crossing_analysis_zh.md)：
-  对无自碰撞主动 baseline 的前后腿拓扑交叉、杆身交叉和结构间隙诊断。
-- [`docs/collision_model_revision_zh.md`](docs/collision_model_revision_zh.md)：
-  外壳设计缝隙、有限足端、模型自碰撞和旧控制器回放的当前修订记录。
-- [`docs/walking_shell_clearance_zh.md`](docs/walking_shell_clearance_zh.md)：
-  二维行走检查姿态、外壳缩短量、完整安全关节范围扫描和滚动影响。
-- [`docs/collision_constrained_cem_zh.md`](docs/collision_constrained_cem_zh.md)：
-  碰撞分级、CEM 代价设计、正式搜索设置和当前主动滚动基准。
-- [`docs/nominal_com_mjx_rl_zh.md`](docs/nominal_com_mjx_rl_zh.md)：
-  固定当前名义 COM、从零开始的 MJX/PPO 环境、奖励和云端运行流程。
-
-## 当前状态
-
-目前处于路线图 M1：在已验证的二维碰撞模型和名义 COM 下学习启动与持续
-滚动。主仿真器已经确定为 MuJoCo：
-
-- 前期使用 CPU MuJoCo 建模、调试接触并完成结构评价；
-- 使用平面复合根关节建立严格的侧视模型；
-- 已实现五条等长中心线边和参数化离散圆弧外壳；
-- 每条边的名义 \(72^\circ\) 圆弧两端各裁去约 \(13.13^\circ\)，实际覆盖
-  \(45.73^\circ\)，暂由 6 个短 capsule 近似；
-- 为保留完整行走安全关节范围，弧壳覆盖角已从初版 57.42° 缩短到 45.73°；
-  完整范围扫描的最小外壳间隙为 2.37 mm；
-- 腿、Torso、足端和弧壳的相关自碰撞已经开启；足端允许接触但不能自由穿越；
-- 当前外壳只改变视觉和碰撞轮廓，尚未计入质量与惯量；
-- 模型与评价稳定后，再接入 MJX 进行批量强化学习；
-- 历史无自碰撞模型曾由相位锁定控制器在 10 s 滚动约 10.99 圈，但该结果
-  包含腿部穿越，现仅作为历史控制基准；
-- 同一旧控制器直接回放到当前碰撞模型时不再发生腿杆交叉，10 s 只滚动
-  1.54 圈；
-- 在修改前的 2 mm 外壳模型上，碰撞约束 CEM 10 s 滚动 9.91 圈；把同一
-  控制器直接回放到当前缩短外壳模型仍滚动 9.05 圈且无腿杆交叉。新模型的
-  正式控制基准需要重新搜索。
-- 已建立读取同一 XML 的名义 COM MJX/PPO 后端；云端基准环境固定为
-  Python 3.12、Linux、CUDA 12.8，并在 RTX 4090 或 H200 上先做编译
-  冒烟，再验证纯 RL 能否从零学会滚动。
-- RL 奖励权重已集中到 `curl_robot_2d_mjx/reward_config.py`，奖励计算、
-  普通训练指标和失败原因分别记录，便于后续频繁调参且不覆盖历史实验。
-
-第一版带注释和离散弧壳的等边五连杆模型位于 `assets/curl_robot_2d.xml`，由
-`curl_robot_2d/model.py` 根据集中参数生成。可使用：
-
-```powershell
-python -m scripts.generate_model
-python -m scripts.inspect_model --keyframe compact
-python -m scripts.analyze_roll_phase
-python -m scripts.run_release_baseline --joint-mode both
-python -m scripts.optimize_phase_controller
-python -m scripts.replay_active_controller
-python -m scripts.replay_active_controller --viewer
-python -m scripts.analyze_leg_crossing
-python -m scripts.view_model --keyframe compact --simulate
-python -m scripts.view_model --keyframe compact --simulate --camera-distance 1.0
-python -m scripts.render_model --keyframe all
-python -m unittest discover -s tests -v
+```bash
+python -m pip install -r requirements.txt
+python -m scripts.walk_cem --controller sine --view
 ```
 
-`--simulate` 默认使用跟随 Torso 的侧视 tracking camera，机器人向前滚动时
-不会离开画面。使用 `--camera-distance` 调整视野大小，数值越大，看得越远；
-如需恢复 XML 中的固定相机，可添加 `--camera-mode fixed`。
+正弦行走基线不需要训练权重。CEM、PPO 回放、续训和部署需要相应的本地产物。
+运行前按 [本地产物管理](docs/local_artifacts_zh.md) 单独准备 reference、标定表、快照和权重。
 
-当前主线是先在名义 COM 下完成二维纯 RL 滚动，再加入启动、调速、制动和
-停止相位控制；随后验证二维蜷缩/展开链路并粗略寻找双模态可行的 COM 区域。
-选定具有鲁棒裕度且可制造的结构后，将二维滚动机制迁移到完整三维四足模型，
-与行走策略和高层状态机组合，最终验证完整的 `walk → roll → walk`。
+## 保留的主线
 
-当前三维滚动鲁棒性实验使用 `robust_recovery_v15` reward 和
-`independent_reset_v4` curriculum：CEM reference 保留名义滚动，residual PPO
-只学习八关节独立 q/qdot 扰动后的恢复。课程从始至终保持独立噪声结构，最终
-达到 `q/qdot=0.005` 的目标分布；root velocity 和 axis tilt 在本轮保持为零。
-该基线通过验收后，使用 `floor_friction_v2` 从它的 `params_best` 热启动，在
-保持上述 reset 分布不变的前提下逐步扩展纯地面接触摩擦到
-`U(0.90, 1.10)`；机器人自接触摩擦不随之改变。摩擦课程通过后，当前下一阶段
-是 `floor_mass_v2`：继续保留独立 reset 与 floor 摩擦分布，只逐步加入每个
-body 耦合的质量/惯量 ±2% 和 ±5%。该阶段通过后使用
-`floor_mass_gain_v3`，固定已通过的质量/惯量分布，只加入每个 actuator 独立的
-`kp` ±2% 和 ±5%。旧 `friction_v1/mass_v1` 只用于复现。
-设计、reward 公式、smoke/H200 命令和验收方法
-见 [`docs/3d_robustness_curriculum_zh.md`](docs/3d_robustness_curriculum_zh.md)。
+| 用途 | 入口 | 说明 |
+|---|---|---|
+| 三维行走 | `scripts.train_ppo_walk3d`、`scripts.train_ppo_deploy`、`scripts.train_ppo_deploy_v2`、`scripts.train_ppo_deploy_v4` | Walking 与可部署历史观测接口；v4 复用 v2 实现 |
+| 持续滚动 | `scripts.train_mjx_3d_roll_distillation`、`scripts.train_mjx_3d_roll_student_dr_ppo` | CEM 教师、BC/DAgger、PPO 与 DR |
+| Stand→Roll | `scripts.train_mjx_3d_stand_to_roll`、`scripts.distill_stand_to_roll_symmetry` | 静止启动与对称教师蒸馏 |
+| Roll→Stand | `scripts.train_mjx_3d_transition_ppo` | 真实滚动快照、动态展开与稳定站立 |
+| 独立速度估计 | `scripts.collect_calibrated_rolling_velocity_data`、`scripts.train_rolling_velocity_estimator`、`scripts.evaluate_rolling_velocity_estimator` | 50 Hz 标定 CEM 版本，独立于控制策略 |
+| 实机接口 | `hardware/rolling_command/` | 手柄、滚动接管与 RTNeural 校验；版本边界见部署说明 |
 
-## 滚动到行走的可运行基线
+Roll→Stand 完成后，自动切入 Walking 的完整链路仍需独立验证。
+文档中的既有实验结果和部署回执不等于本次整理重新进行了训练或实机验证。
 
-`curl_robot_2d` 现在提供一条单模型端到端状态机：
-`ROLL -> BRAKE -> DEPLOY -> WALK -> COMPLETE`。它复用已有滚动 reference、
-phase-aware braking 参数、五次展开轨迹和二维足端轨迹/解析 IK 行走控制器，
-入口为：
+## 文件管理
 
-```powershell
-python -m scripts.run_roll_to_walk
-```
+GitHub 保留代码、模型结构、测试、依赖声明和当前文档。
+结果、权重、数据集、视频、发布包及生成的 reference/标定表仅保留本地，
+不再通过 Git 传输到云端。新克隆的仓库不会自动包含这些运行文件。
 
-设计和输出诊断见 [`docs/roll_to_walk_baseline_zh.md`](docs/roll_to_walk_baseline_zh.md)。
-
-## 行走转蜷缩第一阶段(0.4 m/s 行走 → compact)
-
-反方向 `walk → roll` 的起始段现为**从行走切换**:episode 从 deploy 行走策略
-0.4 m/s 稳态轨迹的真实快照 reset,12 自由度 actor 边走边收拢到 compact;
-终点只认 compact 姿态门(不看速度),暂不接 rolling policy。观测/动作与实机
-deploy 控制器同接口(36×20 历史、12 维绝对位置目标),模型为 mesh
-`rollingquad_abd10_no_self_collision.xml`(compact 前腿 abd −10°/后腿 +10°,
-**自碰撞关闭、只保留地面接触**,由 `rollingquad_abd10.xml` 生成)。入口:
-
-```powershell
-python -m scripts.collect_walking_start_snapshots --out results\walk_start_snapshots_0p4
-python -m scripts.train_walk_compact_ppo --snapshots results\walk_start_snapshots_0p4
-```
-
-设计与边界见 [`docs/walking_to_compact_stage1_zh.md`](docs/walking_to_compact_stage1_zh.md)。
-
-## 3D Transition policy 第一版
-
-面向 `assets/rollingquad_description_2` 中的 12 自由度 `rollingquad_2`，
-由一个 Transition policy 学习减速、展开和稳定；反向课程从 Walking 的
-实际启动初态开始，不使用 `park`，不播放预设减速或展开轨迹。
-BRAKE 课程必须提供真实 ROLL 轨迹的完整状态快照，不修改其速度。
-
-Actor 已按现有 ROS2 `neural_controller` 对齐为 `36 × 20 = 720` 维：
-IMU 角速度、重力方向、速度/姿态指令、12 维关节位置偏差、12 维上次原始动作，
-不输入关节速度。86 维特权 Critic 只用于训练；支持仅导出 Actor 的 RTNeural JSON。
-
-本地可运行不依赖 JAX 的契约测试和训练配置检查；MJX 编译与 PPO 训练留到
-Linux GPU 云端执行：
-
-```powershell
-python -m unittest tests.test_transition_3d tests.test_transition_deployment_3d tests.test_transition_mjx_3d -v
-python -m scripts.train_mjx_3d_transition_ppo --stage walking_start --dry-run
-```
-
-完整设计、五阶段课程、导出命令，以及实机热切换/READY 判断尚需完成的边界见
-[`docs/3d_transition_policy_zh.md`](docs/3d_transition_policy_zh.md)。
+历史代码和文档移至 `.local_archive/20261010/`，保持原相对目录结构并排除 Git。
+[整理清单](docs/cleanup_manifest_zh.md) 记录保留依据和归档范围。

@@ -4,12 +4,13 @@ import numpy as np
 
 
 class RollingHandoff:
-    def __init__(self):
+    def __init__(self, initial_speed=None):
         self.ticks = self.healthy_ticks = 0
         self.alpha = 0.
         self.vx, self.yaw = .6, 0.
         self.stage = 'blending'
         self.stop_required = False
+        self.initial_speed = initial_speed
 
     @staticmethod
     def healthy(axis_z, roll_rate):
@@ -36,6 +37,9 @@ class RollingHandoff:
                 self.stop_required = self.ticks >= 115
                 return
             self.stage = 'command_ramp'
+            if self.initial_speed is not None:
+                self.vx, self.yaw = float(self.initial_speed), 0.
+                return
         self.vx = float(np.clip(vx, self.vx-.003, self.vx+.003))
         self.yaw = float(np.clip(yaw, self.yaw-.0014, self.yaw+.0014))
         self.stage = 'rolling' if abs(self.vx-vx) < 1e-9 and abs(self.yaw-yaw) < 1e-9 else 'command_ramp'
